@@ -41,7 +41,13 @@ def remplace_texte_dans_repertoire(repertoire_source, remplacements, repertoire_
 if __name__ == "__main__":
     # Lecture du fichier de configuration
     config = configparser.ConfigParser()
-    config.read("config.ini")
+    config_file_path = "config.ini"
+
+    if os.path.exists(config_file_path):
+        config.read(config_file_path)
+    else:
+        print(f"Le fichier de configuration {config_file_path} n'a pas été trouvé.")
+        exit()
 
     repertoire_source = config.get("Configuration", "repertoire_source")
     repertoire_destination = config.get("Configuration", "repertoire_destination")
