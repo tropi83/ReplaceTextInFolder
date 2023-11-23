@@ -1,6 +1,5 @@
 import os
 import re
-import configparser
 import shutil
 from datetime import datetime
 import sys
@@ -52,22 +51,6 @@ class TextReplacementApp(QWidget):
         self.progress_value = 0
         self.progress_bar.setValue(0)
 
-        config_file_path = "config.ini"
-        config = configparser.ConfigParser()
-
-        if os.path.exists(config_file_path):
-            config.read(config_file_path)
-        else:
-            self.status_label.setText(f"Configuration file {config_file_path} not found.")
-            return
-
-        remplacements = {}
-        for i in range(1, 3):
-            texte_a_remplacer = config.get("Configuration", f"texte{i}_a_remplacer", fallback='')
-            remplacement = config.get("Configuration", f"remplacement{i}", fallback='')
-            remplacements[f"texte{i}_a_remplacer"] = texte_a_remplacer
-            remplacements[f"remplacement{i}"] = remplacement
-
         # Get the current date for the destination folder name
         current_date = datetime.now()
         repertoire_destination = os.path.join(destination_dir, current_date.strftime("%d-%m-%y_%Hh-%Mm-%Ss"))
@@ -80,7 +63,7 @@ class TextReplacementApp(QWidget):
         for dossier, sous_dossiers, fichiers in os.walk(source_dir):
             for fichier in fichiers:
                 chemin_fichier = os.path.join(dossier, fichier)
-                self.remplace_texte_dans_fichier(chemin_fichier, remplacements)
+                self.remplace_texte_dans_fichier(chemin_fichier)
 
                 # Create the path of the file in the destination directory
                 chemin_fichier_destination = os.path.join(repertoire_destination,
@@ -95,21 +78,21 @@ class TextReplacementApp(QWidget):
 
                 file_count += 1
                 progress_value = int((file_count / total_files) * 100)
-                self.progress_bar.setValue(progress_value)
+                self.progress_value = progress_value
+                self.update_progress()
 
         # Show the completion message
         self.show_completion_message()
 
-    def remplace_texte_dans_fichier(self, fichier, remplacements):
+    def remplace_texte_dans_fichier(self, fichier):
         try:
             with open(fichier, 'r', encoding='utf-8') as file:
                 contenu = file.read()
                 nouveau_contenu = contenu
 
-                for i in range(1, 3):
-                    texte_a_remplacer = remplacements[f"texte{i}_a_remplacer"]
-                    remplacement = remplacements[f"remplacement{i}"]
-                    nouveau_contenu = re.sub(texte_a_remplacer, remplacement, nouveau_contenu, flags=re.M)
+                # Replace text logic here
+                # For example, replace 'old_text' with 'new_text'
+                nouveau_contenu = re.sub('old_text', 'new_text', nouveau_contenu, flags=re.M)
 
             with open(fichier, 'w', encoding='utf-8') as file:
                 file.write(nouveau_contenu)
