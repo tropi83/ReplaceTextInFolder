@@ -37,42 +37,6 @@ def remplace_texte_dans_repertoire(repertoire_source, remplacements, repertoire_
             shutil.copy2(chemin_fichier, chemin_fichier_destination)
             print(f"Fichier copié et traité : {chemin_fichier_destination}")
 
-
-def rename_files_and_folders(config):
-    # Parcourez les différentes clés de remplacement
-    for i in range(1, 4):  # Pour texte1_a_remplacer, texte2_a_remplacer, texte3_a_remplacer
-        key_to_replace = config.get('Configuration', f"texte{i}_a_remplacer")
-
-        # Parcourez tous les fichiers et sous-dossiers dans le dossier spécifié
-        for root, dirs, files in os.walk(config.get('Configuration', 'repertoire_source'), topdown=False):
-            for file_name in files:
-                # Construisez le chemin complet du fichier
-                file_path = os.path.join(root, file_name)
-
-                # Vérifiez si la clé à remplacer est présente dans le nom du fichier
-                if key_to_replace in file_name:
-                    # Construisez le nouveau nom de fichier en remplaçant la clé
-                    new_file_name = file_name.replace(key_to_replace, config.get('Configuration', f"remplacement{i}"))
-
-                    # Construisez le nouveau chemin du fichier
-                    new_file_path = os.path.join(root, new_file_name)
-
-                    # Renommez le fichier
-                    os.rename(file_path, new_file_path)
-                    print(f"Renommage : {file_path} -> {new_file_path}")
-
-            # Construisez le nouveau nom de dossier en remplaçant la clé
-            if key_to_replace in root:
-                new_folder_name = root.replace(key_to_replace, config.get('Configuration', f"remplacement{i}"))
-
-                # Construisez le nouveau chemin du dossier
-                new_folder_path = os.path.join(os.path.dirname(root), new_folder_name)
-
-                # Renommez le dossier
-                os.rename(root, new_folder_path)
-                print(f"Renommage du dossier : {root} -> {new_folder_path}")
-
-
 if __name__ == "__main__":
     # Lecture du fichier de configuration
     config = configparser.ConfigParser()
@@ -96,4 +60,3 @@ if __name__ == "__main__":
 
     # Remplacement de texte dans le répertoire source
     remplace_texte_dans_repertoire(repertoire_source, remplacements, repertoire_destination)
-    #rename_files_and_folders(config)
