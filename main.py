@@ -70,7 +70,7 @@ class TextReplacementApp(QWidget):
 
         # Get the current date for the destination folder name
         current_date = datetime.now()
-        repertoire_destination = os.path.join(destination_dir, current_date.strftime("%d-%m-%y"))
+        repertoire_destination = os.path.join(destination_dir, current_date.strftime("%d-%m-%y_%Hh-%Mm-%Ss"))
 
         # Calculate the total number of files for progress
         total_files = sum([len(files) for _, _, files in os.walk(source_dir)])
