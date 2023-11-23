@@ -95,7 +95,7 @@ class TextReplacementApp(QWidget):
 
                 file_count += 1
                 progress_value = int((file_count / total_files) * 100)
-                self.progress_value = progress_value
+                self.progress_bar.setValue(progress_value)
 
         # Show the completion message
         self.show_completion_message()
