@@ -6,7 +6,6 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton, QFileDialog, \
     QLineEdit, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox
 
-
 class TextReplacementApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -153,7 +152,8 @@ class TextReplacementApp(QWidget):
 
         # Renaming files and directories if the checkbox is checked
         if self.rename_checkbox.isChecked():
-            self.rename_files_and_directories_from_word_pairs(repertoire_destination)
+            total_files_rename = sum(1 for _, _, files in os.walk(repertoire_destination) for _ in files)
+            self.rename_files_and_directories_from_word_pairs(repertoire_destination, total_files_rename)
             print(f"RENAME FOLDER AND FILE {repertoire_destination}")
 
         # Show the completion message
@@ -176,8 +176,9 @@ class TextReplacementApp(QWidget):
         except Exception as e:
             print(f"Erreur lors du traitement de {fichier}: {str(e)}")
 
-    def rename_files_and_directories_from_word_pairs(self, source):
+    def rename_files_and_directories_from_word_pairs(self, source, total_files_rename):
         try:
+            file_count_rename = 0
             for dossier, sous_dossiers, fichiers in os.walk(source):
                 for fichier in fichiers:
                     if not fichier.startswith('.') and any(
@@ -186,7 +187,11 @@ class TextReplacementApp(QWidget):
                         nouveau_nom = self.appliquer_replacements(chemin_fichier)
                         nouveau_chemin_fichier = os.path.join(dossier, nouveau_nom)
                         os.rename(chemin_fichier, nouveau_chemin_fichier)
-                        print(f"Fichier renommé : {nouveau_chemin_fichier}")
+
+                        file_count_rename += 1
+                        progress_value_rename = int((file_count_rename / total_files_rename) * 100)
+                        self.progress_value = progress_value_rename
+                        self.update_progress()
 
                 for sous_dossier in sous_dossiers:
                     if not sous_dossier.startswith('.') and any(
@@ -195,12 +200,16 @@ class TextReplacementApp(QWidget):
                         nouveau_nom = self.appliquer_replacements(chemin_sous_dossier)
                         nouveau_chemin_sous_dossier = os.path.join(dossier, nouveau_nom)
                         os.rename(chemin_sous_dossier, nouveau_chemin_sous_dossier)
-                        print(f"Dossier renommé : {nouveau_chemin_sous_dossier}")
+
+                        file_count_rename += 1
+                        progress_value_rename = int((file_count_rename / total_files_rename) * 100)
+                        self.progress_value = progress_value_rename
+                        self.update_progress()
 
                 # Recursively call the function for subdirectories
                 for sous_dossier in sous_dossiers:
                     sous_dossier_path = os.path.join(dossier, sous_dossier)
-                    self.rename_files_and_directories_from_word_pairs(sous_dossier_path)
+                    self.rename_files_and_directories_from_word_pairs(sous_dossier_path, total_files_rename)
 
             self.status_label.setText('Files and directories renamed successfully.')
 
@@ -214,7 +223,6 @@ class TextReplacementApp(QWidget):
             new_word = new_word_input.text()
             nouveau_nom = nouveau_nom.replace(word_to_replace, new_word)
         return nouveau_nom
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
