@@ -11,6 +11,16 @@ class TextReplacementApp(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.word_pairs = None
+        self.progress_value = None
+        self.status_label = None
+        self.word_pairs_layout = None
+        self.word_pairs_widget = None
+        self.scroll_area = None
+        self.progress_bar = None
+        self.replace_button = None
+        self.rename_checkbox = None
+        self.add_word_pair_button = None
         self.init_ui()
 
     def init_ui(self):
@@ -33,12 +43,12 @@ class TextReplacementApp(QWidget):
         self.add_word_pair_button = QPushButton('Add Word Pair')
 
         layout = QVBoxLayout()
-        layout.addWidget(self.status_label)
         layout.addWidget(self.scroll_area)
+        layout.addWidget(self.add_word_pair_button)
+        layout.addWidget(self.rename_checkbox)
+        layout.addWidget(self.status_label)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.replace_button)
-        layout.addWidget(self.rename_checkbox)
-        layout.addWidget(self.add_word_pair_button)
         self.setLayout(layout)
 
         self.progress_value = 0
