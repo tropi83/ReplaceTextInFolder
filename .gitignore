@@ -7,7 +7,7 @@ build
 fuse-demo-v19.0.0
 fuse-starter-v19.0.0
 fuse-demo-v19.0.0_LATEST
-output
+output/*
 
 # ------- DEFAULT PYTHON GITIGNORE -------
 

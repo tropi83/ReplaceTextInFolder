@@ -3,7 +3,9 @@ import re
 import shutil
 from datetime import datetime
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton, QFileDialog, QLineEdit, QMessageBox, QHBoxLayout, QScrollArea, QSizePolicy, QCheckBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton, QFileDialog, \
+    QLineEdit, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox
+
 
 class TextReplacementApp(QWidget):
     def __init__(self):
@@ -112,7 +114,8 @@ class TextReplacementApp(QWidget):
                     chemin_fichier = os.path.join(dossier, fichier)
 
                     # Create the path of the file in the temporary directory
-                    chemin_fichier_temp = os.path.join(repertoire_destination, os.path.relpath(chemin_fichier, source_dir))
+                    chemin_fichier_temp = os.path.join(repertoire_destination,
+                                                       os.path.relpath(chemin_fichier, source_dir))
 
                     # Ensure that the temporary directory exists
                     os.makedirs(os.path.dirname(chemin_fichier_temp), exist_ok=True)
@@ -136,11 +139,12 @@ class TextReplacementApp(QWidget):
                 progress_value = int((file_count / total_files) * 100)
                 self.progress_value = progress_value
 
-                # Renaming files and directories if the checkbox is checked
-                #if self.rename_checkbox.isChecked():
-                    #self.rename_files_and_directories(chemin_fichier_temp)
-
                 self.update_progress()
+
+        # Renaming files and directories if the checkbox is checked
+        if self.rename_checkbox.isChecked():
+            self.rename_files_and_directories_from_word_pairs(repertoire_destination)
+            print(f"RENAME FOLDER AND FILE {repertoire_destination}")
 
         # Show the completion message
         self.show_completion_message()
@@ -161,6 +165,46 @@ class TextReplacementApp(QWidget):
                 file.write(nouveau_contenu)
         except Exception as e:
             print(f"Erreur lors du traitement de {fichier}: {str(e)}")
+
+    def rename_files_and_directories_from_word_pairs(self, source):
+        try:
+            for dossier, sous_dossiers, fichiers in os.walk(source):
+                for fichier in fichiers:
+                    if not fichier.startswith('.') and any(
+                            input_widget.text() in fichier for input_widget, _ in self.word_pairs):
+                        chemin_fichier = os.path.join(dossier, fichier)
+                        nouveau_nom = self.appliquer_replacements(chemin_fichier)
+                        nouveau_chemin_fichier = os.path.join(dossier, nouveau_nom)
+                        os.rename(chemin_fichier, nouveau_chemin_fichier)
+                        print(f"Fichier renommé : {nouveau_chemin_fichier}")
+
+                for sous_dossier in sous_dossiers:
+                    if not sous_dossier.startswith('.') and any(
+                            input_widget.text() in sous_dossier for input_widget, _ in self.word_pairs):
+                        chemin_sous_dossier = os.path.join(dossier, sous_dossier)
+                        nouveau_nom = self.appliquer_replacements(chemin_sous_dossier)
+                        nouveau_chemin_sous_dossier = os.path.join(dossier, nouveau_nom)
+                        os.rename(chemin_sous_dossier, nouveau_chemin_sous_dossier)
+                        print(f"Dossier renommé : {nouveau_chemin_sous_dossier}")
+
+                # Recursively call the function for subdirectories
+                for sous_dossier in sous_dossiers:
+                    sous_dossier_path = os.path.join(dossier, sous_dossier)
+                    self.rename_files_and_directories_from_word_pairs(sous_dossier_path)
+
+            self.status_label.setText('Files and directories renamed successfully.')
+
+        except Exception as e:
+            print(f"Erreur lors du traitement de {source}: {str(e)}")
+
+    def appliquer_replacements(self, chemin):
+        nouveau_nom = os.path.basename(chemin)
+        for word_to_replace_input, new_word_input in self.word_pairs:
+            word_to_replace = word_to_replace_input.text()
+            new_word = new_word_input.text()
+            nouveau_nom = nouveau_nom.replace(word_to_replace, new_word)
+        return nouveau_nom
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
