@@ -3,7 +3,7 @@ import re
 import shutil
 from datetime import datetime
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton, QFileDialog, QLineEdit, QMessageBox
 
 class TextReplacementApp(QWidget):
     def __init__(self):
@@ -16,11 +16,21 @@ class TextReplacementApp(QWidget):
         self.setGeometry(300, 300, 400, 200)
 
         self.status_label = QLabel('Status:')
+        self.word_to_replace_label = QLabel('Word to Replace:')
+        self.word_to_replace_input = QLineEdit()
+
+        self.new_word_label = QLabel('New Word:')
+        self.new_word_input = QLineEdit()
+
         self.progress_bar = QProgressBar()
         self.replace_button = QPushButton('Replace Text')
 
         layout = QVBoxLayout()
         layout.addWidget(self.status_label)
+        layout.addWidget(self.word_to_replace_label)
+        layout.addWidget(self.word_to_replace_input)
+        layout.addWidget(self.new_word_label)
+        layout.addWidget(self.new_word_input)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.replace_button)
         self.setLayout(layout)
@@ -36,6 +46,9 @@ class TextReplacementApp(QWidget):
         QMessageBox.information(self, 'Text Replacement', 'Text replacement completed.')
 
     def replace_text(self):
+        word_to_replace = self.word_to_replace_input.text()
+        new_word = self.new_word_input.text()
+
         # Prompt user to select the source directory
         source_dir = QFileDialog.getExistingDirectory(self, 'Select Source Directory')
         if not source_dir:
@@ -48,33 +61,51 @@ class TextReplacementApp(QWidget):
             self.status_label.setText('Please select a destination directory.')
             return
 
-        self.progress_value = 0
-        self.progress_bar.setValue(0)
-
         # Get the current date for the destination folder name
         current_date = datetime.now()
-        repertoire_destination = os.path.join(destination_dir, current_date.strftime("%d-%m-%y_%Hh-%Mm-%Ss"))
+        folder_name = os.path.basename(source_dir) + "_" + current_date.strftime("%d-%m-%y_%Hh-%Mm-%Ss")
+        repertoire_destination = os.path.join(destination_dir, folder_name)
+
+        # Create a temporary directory to store original files
+        os.makedirs(repertoire_destination, exist_ok=True)
+
+        # Define image file extensions to ignore
+        files_extensions_ignored = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.woff2']
 
         # Calculate the total number of files for progress
-        total_files = sum([len(files) for _, _, files in os.walk(source_dir)])
+        total_files = 0
+        for dossier, sous_dossiers, fichiers in os.walk(source_dir):
+            for fichier in fichiers:
+                if not any(fichier.lower().endswith(ext) for ext in files_extensions_ignored):
+                    total_files += 1
 
-        # Replacement of text in the source directory
+        # Copy the original files to the temporary directory
         file_count = 0
         for dossier, sous_dossiers, fichiers in os.walk(source_dir):
             for fichier in fichiers:
-                chemin_fichier = os.path.join(dossier, fichier)
-                self.remplace_texte_dans_fichier(chemin_fichier)
+                if not any(fichier.lower().endswith(ext) for ext in files_extensions_ignored):
+                    chemin_fichier = os.path.join(dossier, fichier)
 
-                # Create the path of the file in the destination directory
-                chemin_fichier_destination = os.path.join(repertoire_destination,
-                                                          os.path.relpath(chemin_fichier, source_dir))
+                    # Create the path of the file in the temporary directory
+                    chemin_fichier_temp = os.path.join(repertoire_destination, os.path.relpath(chemin_fichier, source_dir))
 
-                # Ensure that the destination directory exists
-                os.makedirs(os.path.dirname(chemin_fichier_destination), exist_ok=True)
+                    # Ensure that the temporary directory exists
+                    os.makedirs(os.path.dirname(chemin_fichier_temp), exist_ok=True)
 
-                # Copy the file with its full path to the destination directory
-                shutil.copy2(chemin_fichier, chemin_fichier_destination)
-                print(f"File copied and processed: {chemin_fichier_destination}")
+                    # Copy the original file to the temporary directory
+                    shutil.copy2(chemin_fichier, chemin_fichier_temp)
+                    print(f"Original file copied to temporary directory: {chemin_fichier_temp}")
+
+                    file_count += 1
+                    progress_value = int((file_count / total_files) * 100)
+                    self.progress_value = progress_value
+                    self.update_progress()
+
+        # Replacement of text in the temporary directory
+        for dossier, sous_dossiers, fichiers in os.walk(repertoire_destination):
+            for fichier in fichiers:
+                chemin_fichier_temp = os.path.join(dossier, fichier)
+                self.remplace_texte_dans_fichier(chemin_fichier_temp, word_to_replace, new_word)
 
                 file_count += 1
                 progress_value = int((file_count / total_files) * 100)
@@ -84,15 +115,14 @@ class TextReplacementApp(QWidget):
         # Show the completion message
         self.show_completion_message()
 
-    def remplace_texte_dans_fichier(self, fichier):
+    def remplace_texte_dans_fichier(self, fichier, word_to_replace, new_word):
         try:
             with open(fichier, 'r', encoding='utf-8') as file:
                 contenu = file.read()
                 nouveau_contenu = contenu
 
                 # Replace text logic here
-                # For example, replace 'old_text' with 'new_text'
-                nouveau_contenu = re.sub('old_text', 'new_text', nouveau_contenu, flags=re.M)
+                nouveau_contenu = re.sub(word_to_replace, new_word, nouveau_contenu, flags=re.M)
 
             with open(fichier, 'w', encoding='utf-8') as file:
                 file.write(nouveau_contenu)
