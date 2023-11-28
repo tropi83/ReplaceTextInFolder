@@ -12,6 +12,7 @@ class TextReplacementApp(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.help_choose_folder = None
         self.help_choose_word_label = None
         self.word_pairs = None
         self.progress_value = None
@@ -23,17 +24,17 @@ class TextReplacementApp(QWidget):
         self.replace_button = None
         self.rename_checkbox = None
         self.add_word_pair_button = None
-        self.select_source_button = None  # Nouveau bouton pour le dossier source
-        self.select_destination_button = None  # Nouveau bouton pour le dossier de destination
-        self.source_path_input = None  # Nouvel input pour le chemin du dossier source
-        self.destination_path_input = None  # Nouvel input pour le chemin du dossier de destination
+        self.select_source_button = None
+        self.select_destination_button = None
+        self.source_path_input = None
+        self.destination_path_input = None
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle('Project Robber ')
-        self.setGeometry(300, 300, 800, 300)  # Ajusté la largeur pour accommoder les nouveaux boutons
+        self.setGeometry(300, 300, 800, 300)
 
-        self.help_choose_word_label = QLabel('Ajouter des mots à remplacer (case-sensitive):')
+        self.help_choose_word_label = QLabel('Ajouter des chaines de caractères à remplacer (case-sensitive):')
         self.help_choose_folder = QLabel('Choisissez les dossiers sources et destinations')
         self.status_label = QLabel('Status:')
         self.status_label.hide()  # Masquer le label status
@@ -49,8 +50,9 @@ class TextReplacementApp(QWidget):
         self.progress_bar = QProgressBar()
         self.progress_bar.hide()
         self.replace_button = QPushButton('Lancer le traitement')
-        self.rename_checkbox = QCheckBox('Renommer aussi les dossiers et fichiers à partir des mots à remplacer')
-        self.add_word_pair_button = QPushButton('Ajouter')
+        self.rename_checkbox = QCheckBox('Renommer aussi les dossiers et fichiers à partir des chaines de caractères '
+                                         'à remplacer')
+        self.add_word_pair_button = QPushButton('Ajouter une chaine de caractères à remplacer')
         self.select_source_button = QPushButton('Sélectionner le dossier source')
         self.select_destination_button = QPushButton('Sélectionner le dossier de destination')
         self.source_path_input = QLineEdit()
@@ -85,7 +87,7 @@ class TextReplacementApp(QWidget):
         self.select_source_button.clicked.connect(self.select_source_directory)
         self.select_destination_button.clicked.connect(self.select_destination_directory)
 
-        # Ajouter une paire de mots par défaut
+        # Ajouter une paire de chaines de caractères par défaut
         self.add_word_pair()
 
     def add_word_pair(self):
@@ -93,9 +95,9 @@ class TextReplacementApp(QWidget):
         new_word_input = QLineEdit()
 
         word_pair_layout = QHBoxLayout()
-        word_pair_layout.addWidget(QLabel('Mot à remplacer:'))
+        word_pair_layout.addWidget(QLabel('A remplacer:'))
         word_pair_layout.addWidget(word_to_replace_input)
-        word_pair_layout.addWidget(QLabel('Nouveau mot:'))
+        word_pair_layout.addWidget(QLabel('Par:'))
         word_pair_layout.addWidget(new_word_input)
 
         self.word_pairs_layout.addLayout(word_pair_layout)
@@ -198,11 +200,6 @@ class TextReplacementApp(QWidget):
         if self.rename_checkbox.isChecked():
             total_files_rename = sum(1 for _, _, files in os.walk(repertoire_destination) for _ in files)
             self.rename_files_and_directories_from_word_pairs(repertoire_destination, total_files_rename)
-            if self.rename_checkbox.isChecked():
-                self.status_label.setText('Opération finie - Dossiers, fichiers et textes dans les fichiers remplacés.')
-            else:
-                self.status_label.setText('Opération finie - Textes dans les fichiers remplacés.')
-            print(f"RENAME FOLDER AND FILE {repertoire_destination}")
 
         # Cacher la barre de progression après le traitement
         self.status_label.hide()
