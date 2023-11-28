@@ -1,8 +1,6 @@
 
 .idea
 package-lock.json
-dist
-build
 
 fuse-demo-v19.0.0
 fuse-starter-v19.0.0

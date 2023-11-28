@@ -3,13 +3,16 @@ import re
 import shutil
 from datetime import datetime
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton, QFileDialog, \
-    QLineEdit, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QLabel, QVBoxLayout, QProgressBar, QPushButton,
+    QFileDialog, QLineEdit, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox
+)
 
 class TextReplacementApp(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.help_choose_word_label = None
         self.word_pairs = None
         self.progress_value = None
         self.status_label = None
@@ -20,13 +23,20 @@ class TextReplacementApp(QWidget):
         self.replace_button = None
         self.rename_checkbox = None
         self.add_word_pair_button = None
+        self.select_source_button = None  # Nouveau bouton pour le dossier source
+        self.select_destination_button = None  # Nouveau bouton pour le dossier de destination
+        self.source_path_input = None  # Nouvel input pour le chemin du dossier source
+        self.destination_path_input = None  # Nouvel input pour le chemin du dossier de destination
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle('Text Replacement Tool')
-        self.setGeometry(300, 300, 600, 300)
+        self.setWindowTitle('Project Robber ')
+        self.setGeometry(300, 300, 800, 300)  # Ajusté la largeur pour accommoder les nouveaux boutons
 
+        self.help_choose_word_label = QLabel('Ajouter des mots à remplacer (case-sensitive):')
+        self.help_choose_folder = QLabel('Choisissez les dossiers sources et destinations')
         self.status_label = QLabel('Status:')
+        self.status_label.hide()  # Masquer le label status
         self.word_pairs_layout = QVBoxLayout()
 
         self.word_pairs_widget = QWidget()
@@ -37,11 +47,28 @@ class TextReplacementApp(QWidget):
         self.scroll_area.setWidget(self.word_pairs_widget)
 
         self.progress_bar = QProgressBar()
-        self.replace_button = QPushButton('Replace Text')
-        self.rename_checkbox = QCheckBox('Rename Files and Directories')
-        self.add_word_pair_button = QPushButton('Add Word Pair')
+        self.progress_bar.hide()
+        self.replace_button = QPushButton('Lancer le traitement')
+        self.rename_checkbox = QCheckBox('Renommer aussi les dossiers et fichiers à partir des mots à remplacer')
+        self.add_word_pair_button = QPushButton('Ajouter')
+        self.select_source_button = QPushButton('Sélectionner le dossier source')
+        self.select_destination_button = QPushButton('Sélectionner le dossier de destination')
+        self.source_path_input = QLineEdit()
+        self.destination_path_input = QLineEdit()
+
+        # Bouton selection dossiers (source et destination)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.source_path_input)
+        button_layout.addWidget(self.select_source_button)
+        button_layout2 = QHBoxLayout()
+        button_layout2.addWidget(self.destination_path_input)
+        button_layout2.addWidget(self.select_destination_button)
 
         layout = QVBoxLayout()
+        layout.addWidget(self.help_choose_folder)
+        layout.addLayout(button_layout)
+        layout.addLayout(button_layout2)
+        layout.addWidget(self.help_choose_word_label)
         layout.addWidget(self.scroll_area)
         layout.addWidget(self.add_word_pair_button)
         layout.addWidget(self.rename_checkbox)
@@ -55,6 +82,8 @@ class TextReplacementApp(QWidget):
 
         self.replace_button.clicked.connect(self.replace_text)
         self.add_word_pair_button.clicked.connect(self.add_word_pair)
+        self.select_source_button.clicked.connect(self.select_source_directory)
+        self.select_destination_button.clicked.connect(self.select_destination_directory)
 
         # Ajouter une paire de mots par défaut
         self.add_word_pair()
@@ -64,9 +93,9 @@ class TextReplacementApp(QWidget):
         new_word_input = QLineEdit()
 
         word_pair_layout = QHBoxLayout()
-        word_pair_layout.addWidget(QLabel('Word to Replace:'))
+        word_pair_layout.addWidget(QLabel('Mot à remplacer:'))
         word_pair_layout.addWidget(word_to_replace_input)
-        word_pair_layout.addWidget(QLabel('New Word:'))
+        word_pair_layout.addWidget(QLabel('Nouveau mot:'))
         word_pair_layout.addWidget(new_word_input)
 
         self.word_pairs_layout.addLayout(word_pair_layout)
@@ -79,20 +108,26 @@ class TextReplacementApp(QWidget):
         self.progress_bar.setValue(self.progress_value)
 
     def show_completion_message(self):
-        QMessageBox.information(self, 'Text Replacement', 'Text replacement completed.')
+        if self.rename_checkbox.isChecked():
+            QMessageBox.information(self, 'Opération finie', 'Dossiers, fichiers et textes dans les fichiers remplacés.')
+        else:
+            QMessageBox.information(self, 'Opération finie', 'Textes dans les fichiers remplacés.')
 
     def replace_text(self):
-        # Prompt user to select the source directory
-        source_dir = QFileDialog.getExistingDirectory(self, 'Select Source Directory')
-        if not source_dir:
-            self.status_label.setText('Please select a source directory.')
+        # Utiliser les valeurs des champs de texte au lieu des dialogues de sélection
+        source_dir = self.source_path_input.text()
+        if not source_dir or not os.path.exists(source_dir):
+            self.status_label.setText('Veuillez sélectionner un dossier source valide.')
             return
 
-        # Prompt user to select the destination directory
-        destination_dir = QFileDialog.getExistingDirectory(self, 'Select Destination Directory')
-        if not destination_dir:
-            self.status_label.setText('Please select a destination directory.')
+        destination_dir = self.destination_path_input.text()
+        if not destination_dir or not os.path.exists(destination_dir):
+            self.status_label.setText('Veuillez sélectionner un dossier de destination valide.')
             return
+
+        # Afficher la barre de progression
+        self.progress_bar.show()
+        self.status_label.show()
 
         self.progress_value = 0
         self.progress_bar.setValue(0)
@@ -119,19 +154,24 @@ class TextReplacementApp(QWidget):
         file_count = 0
         for dossier, sous_dossiers, fichiers in os.walk(source_dir):
             for fichier in fichiers:
-                if not any(fichier.lower().endswith(ext) for ext in files_extensions_ignored):
-                    chemin_fichier = os.path.join(dossier, fichier)
+                chemin_fichier = os.path.join(dossier, fichier)
 
-                    # Create the path of the file in the temporary directory
-                    chemin_fichier_temp = os.path.join(repertoire_destination,
-                                                       os.path.relpath(chemin_fichier, source_dir))
-
-                    # Ensure that the temporary directory exists
+                # Vérifier si le fichier a une extension dans la liste d'exceptions
+                if any(fichier.lower().endswith(ext) for ext in files_extensions_ignored):
+                    # Copier le fichier sans effectuer de remplacement de texte
+                    chemin_fichier_temp = os.path.join(repertoire_destination, os.path.relpath(chemin_fichier, source_dir))
                     os.makedirs(os.path.dirname(chemin_fichier_temp), exist_ok=True)
-
-                    # Copy the original file to the temporary directory
+                    shutil.copy2(chemin_fichier, chemin_fichier_temp)
+                    print(f"File copied to temporary directory (exception): {chemin_fichier_temp}")
+                else:
+                    # Copier le fichier et effectuer le remplacement de texte
+                    chemin_fichier_temp = os.path.join(repertoire_destination, os.path.relpath(chemin_fichier, source_dir))
+                    os.makedirs(os.path.dirname(chemin_fichier_temp), exist_ok=True)
                     shutil.copy2(chemin_fichier, chemin_fichier_temp)
                     print(f"Original file copied to temporary directory: {chemin_fichier_temp}")
+
+                    # Remplacement de texte dans le fichier
+                    self.remplace_texte_dans_fichier(chemin_fichier_temp)
 
                     file_count += 1
                     progress_value = int((file_count / total_files) * 100)
@@ -142,19 +182,31 @@ class TextReplacementApp(QWidget):
         for dossier, sous_dossiers, fichiers in os.walk(repertoire_destination):
             for fichier in fichiers:
                 chemin_fichier_temp = os.path.join(dossier, fichier)
-                self.remplace_texte_dans_fichier(chemin_fichier_temp)
 
-                file_count += 1
-                progress_value = int((file_count / total_files) * 100)
-                self.progress_value = progress_value
+                # Vérifier si le fichier a une extension dans la liste d'exceptions
+                if not any(fichier.lower().endswith(ext) for ext in files_extensions_ignored):
+                    # Remplacement de texte dans le fichier
+                    self.remplace_texte_dans_fichier(chemin_fichier_temp)
 
-                self.update_progress()
+                    file_count += 1
+                    progress_value = int((file_count / total_files) * 100)
+                    self.progress_value = progress_value
+
+                    self.update_progress()
 
         # Renaming files and directories if the checkbox is checked
         if self.rename_checkbox.isChecked():
             total_files_rename = sum(1 for _, _, files in os.walk(repertoire_destination) for _ in files)
             self.rename_files_and_directories_from_word_pairs(repertoire_destination, total_files_rename)
+            if self.rename_checkbox.isChecked():
+                self.status_label.setText('Opération finie - Dossiers, fichiers et textes dans les fichiers remplacés.')
+            else:
+                self.status_label.setText('Opération finie - Textes dans les fichiers remplacés.')
             print(f"RENAME FOLDER AND FILE {repertoire_destination}")
+
+        # Cacher la barre de progression après le traitement
+        self.status_label.hide()
+        self.progress_bar.hide()
 
         # Show the completion message
         self.show_completion_message()
@@ -211,8 +263,6 @@ class TextReplacementApp(QWidget):
                     sous_dossier_path = os.path.join(dossier, sous_dossier)
                     self.rename_files_and_directories_from_word_pairs(sous_dossier_path, total_files_rename)
 
-            self.status_label.setText('Files and directories renamed successfully.')
-
         except Exception as e:
             print(f"Erreur lors du traitement de {source}: {str(e)}")
 
@@ -223,6 +273,18 @@ class TextReplacementApp(QWidget):
             new_word = new_word_input.text()
             nouveau_nom = nouveau_nom.replace(word_to_replace, new_word)
         return nouveau_nom
+
+    def select_source_directory(self):
+        source_dir = QFileDialog.getExistingDirectory(self, 'Select Source Directory')
+        if source_dir:
+            self.source_path_input.setText(source_dir)
+            self.status_label.setText(f'Dossier Source: {source_dir}')
+
+    def select_destination_directory(self):
+        destination_dir = QFileDialog.getExistingDirectory(self, 'Select Destination Directory')
+        if destination_dir:
+            self.destination_path_input.setText(destination_dir)
+            self.status_label.setText(f'Dossier de Destination: {destination_dir}')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

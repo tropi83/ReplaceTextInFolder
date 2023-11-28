@@ -22,5 +22,5 @@ Use pyCharm + run
 
 Compile
 ```
-pyinstaller --onefile main.py
+pyinstaller --onefile --noconsole main.py
 ```
