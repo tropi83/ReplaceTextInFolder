@@ -8,9 +8,6 @@ Ce programme à pour but de :
 
 - Changer tous les textes (récursivement*)
 
-*Depuis le fichier config.ini, vous pouvez configurer les textes à remplacer.
-
-
 
 ### Technologies
 - Python 3.11.6
@@ -20,7 +17,7 @@ Ce programme à pour but de :
 Use pyCharm + run
 ```
 
-Compile
+## Compilation
 ```
-pyinstaller --onefile --noconsole main.py
+pyinstaller --onefile --noconsole --name=ReplaceTextInFolder main.py
 ```
